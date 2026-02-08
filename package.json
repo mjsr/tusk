@@ -47,7 +47,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "mjsr",
+      "owner": "Demerjianm",
       "repo": "tusk"
     }
   },
@@ -59,7 +59,7 @@
     "ai",
     "sql"
   ],
-  "author": "mjsr",
+  "author": "Demerjianm",
   "license": "ISC",
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
