@@ -1,0 +1,86 @@
+export interface ConnectionConfig {
+  id: string
+  name: string
+  host: string
+  port: number
+  database: string
+  user: string
+  password: string
+  ssl?: boolean
+}
+
+export interface ConnectionTestResult {
+  success: boolean
+  message: string
+  serverVersion?: string
+}
+
+export interface QueryResult {
+  rows: Record<string, unknown>[]
+  fields: { name: string; dataTypeID: number }[]
+  rowCount: number
+  command: string
+}
+
+export interface SavedConnection extends ConnectionConfig {
+  lastConnected?: string
+}
+
+export interface ColumnInfo {
+  name: string
+  type: string
+  nullable: boolean
+  defaultValue: string | null
+  isPrimaryKey: boolean
+}
+
+export interface TableInfo {
+  rowCount: number
+  indexes: {
+    name: string
+    columns: string[]
+    isUnique: boolean
+    isPrimary: boolean
+  }[]
+  foreignKeys: {
+    name: string
+    columns: string[]
+    referencedTable: string
+    referencedColumns: string[]
+  }[]
+}
+
+// Data editing types
+export interface TableContext {
+  schema: string
+  table: string
+  primaryKeys: string[]
+}
+
+export interface RowChange {
+  type: 'update' | 'insert' | 'delete'
+  rowIndex: number
+  originalRow?: Record<string, unknown>
+  newRow?: Record<string, unknown>
+  changedColumns?: string[]
+}
+
+export interface PendingChanges {
+  tableContext: TableContext
+  changes: RowChange[]
+}
+
+export interface GeneratedSQL {
+  statements: string[]
+  params: unknown[][]
+}
+
+// Saved queries types
+export interface SavedQuery {
+  id: string
+  name: string
+  sql: string
+  folder?: string
+  createdAt: string
+  updatedAt: string
+}
