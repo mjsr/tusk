@@ -2,6 +2,7 @@ import { useState } from 'react'
 import ConnectionManager from './components/ConnectionManager/ConnectionManager'
 import Layout from './components/Layout/Layout'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { LicenseProvider } from './contexts/LicenseContext'
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(false)
@@ -20,11 +21,13 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      {!isConnected ? (
-        <ConnectionManager onConnect={handleConnect} />
-      ) : (
-        <Layout connectionName={connectionName} onDisconnect={handleDisconnect} />
-      )}
+      <LicenseProvider>
+        {!isConnected ? (
+          <ConnectionManager onConnect={handleConnect} />
+        ) : (
+          <Layout connectionName={connectionName} onDisconnect={handleDisconnect} />
+        )}
+      </LicenseProvider>
     </ThemeProvider>
   )
 }

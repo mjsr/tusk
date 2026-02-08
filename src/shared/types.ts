@@ -118,3 +118,36 @@ export type Feature =
   | 'shared_dashboards'
   | 'team_collaboration'
   | 'action_triggers'
+  | 'users_permissions'
+
+// Database role types
+export interface DatabaseRole {
+  name: string
+  isSuperuser: boolean
+  canCreateDb: boolean
+  canCreateRole: boolean
+  canLogin: boolean
+  hasReplication: boolean
+  connectionLimit: number
+  validUntil: string | null
+  oid: number
+}
+
+export interface RoleMembership {
+  roleName: string
+  memberName: string
+  adminOption: boolean
+}
+
+export interface TableGrant {
+  schemaName: string
+  tableName: string
+  grantee: string
+  privileges: string[]
+}
+
+export interface SchemaGrant {
+  schemaName: string
+  grantee: string
+  privilegeType: 'USAGE' | 'CREATE'
+}

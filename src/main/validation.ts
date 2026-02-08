@@ -200,3 +200,18 @@ export function validateQueryId(id: unknown): string {
 
   return id
 }
+
+// Validate role name
+export function validateRoleName(role: unknown): string {
+  if (!isString(role) || role.length === 0 || role.length > 128) {
+    throw new ValidationError('Invalid role name')
+  }
+
+  // PostgreSQL role names: allow alphanumeric, underscore, and dollar sign
+  // Roles can start with letters or underscore
+  if (!/^[a-zA-Z_][a-zA-Z0-9_$]*$/.test(role)) {
+    throw new ValidationError('Role name contains invalid characters')
+  }
+
+  return role
+}

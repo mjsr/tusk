@@ -1,7 +1,12 @@
 import { useRef, useState } from 'react'
 import QueryTabs, { QueryTabsHandle } from '../QueryEditor/QueryTabs'
 import { SchemaBrowser } from '../SchemaBrowser'
+import { UsersBrowser } from '../UsersBrowser'
 import ThemeToggle from '../ThemeToggle'
+import { useLicense } from '../../contexts/LicenseContext'
+import type { LicenseTier } from '../../../shared/types'
+
+type SidebarTab = 'schema' | 'users'
 
 interface Props {
   connectionName: string
@@ -13,6 +18,8 @@ export default function Layout({ connectionName, onDisconnect }: Props) {
   const [sidebarWidth, setSidebarWidth] = useState(280)
   const [isResizing, setIsResizing] = useState(false)
   const [showSidebar, setShowSidebar] = useState(true)
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>('schema')
+  const { tier, setDevTier } = useLicense()
 
   const handlePreviewTable = async (schema: string, table: string) => {
     const query = `SELECT * FROM "${schema}"."${table}" LIMIT 100`
@@ -93,6 +100,29 @@ export default function Layout({ connectionName, onDisconnect }: Props) {
 
           <div className="w-px h-4 bg-db-border" />
 
+          {/* Dev tier switcher */}
+          <div className="flex items-center gap-1 px-1 py-0.5 bg-db-elevated rounded-md">
+            {(['free', 'pro', 'team'] as LicenseTier[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setDevTier(t)}
+                className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                  tier === t
+                    ? t === 'free'
+                      ? 'bg-db-surface text-db-text'
+                      : t === 'pro'
+                        ? 'bg-db-accent text-white'
+                        : 'bg-purple-500 text-white'
+                    : 'text-db-text-muted hover:text-db-text'
+                }`}
+              >
+                {t.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          <div className="w-px h-4 bg-db-border" />
+
           {/* Disconnect button */}
           <button
             onClick={onDisconnect}
@@ -108,14 +138,61 @@ export default function Layout({ connectionName, onDisconnect }: Props) {
 
       {/* Main content */}
       <div className="flex-1 flex min-h-0">
-        {/* Schema browser sidebar */}
+        {/* Sidebar with tab switcher */}
         {showSidebar && (
           <>
             <div
-              className="flex-shrink-0 overflow-hidden"
+              className="flex-shrink-0 overflow-hidden flex flex-col"
               style={{ width: sidebarWidth }}
             >
-              <SchemaBrowser onPreviewTable={handlePreviewTable} />
+              {/* Tab switcher */}
+              <div className="flex border-b border-db-border bg-db-darker shrink-0">
+                <button
+                  onClick={() => setSidebarTab('schema')}
+                  className={`flex-1 px-3 py-2 text-xs font-medium transition-colors relative ${
+                    sidebarTab === 'schema'
+                      ? 'text-db-accent'
+                      : 'text-db-text-muted hover:text-db-text'
+                  }`}
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 3C7.58 3 4 4.79 4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7c0-2.21-3.58-4-8-4zm0 2c3.87 0 6 1.5 6 2s-2.13 2-6 2-6-1.5-6-2 2.13-2 6-2z" />
+                    </svg>
+                    Schema
+                  </span>
+                  {sidebarTab === 'schema' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-db-accent" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setSidebarTab('users')}
+                  className={`flex-1 px-3 py-2 text-xs font-medium transition-colors relative ${
+                    sidebarTab === 'users'
+                      ? 'text-db-accent'
+                      : 'text-db-text-muted hover:text-db-text'
+                  }`}
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg>
+                    Users
+                  </span>
+                  {sidebarTab === 'users' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-db-accent" />
+                  )}
+                </button>
+              </div>
+
+              {/* Tab content */}
+              <div className="flex-1 min-h-0 overflow-hidden">
+                {sidebarTab === 'schema' ? (
+                  <SchemaBrowser onPreviewTable={handlePreviewTable} />
+                ) : (
+                  <UsersBrowser />
+                )}
+              </div>
             </div>
 
             {/* Resize handle */}

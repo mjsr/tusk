@@ -10,6 +10,7 @@ interface LicenseContextType {
   deactivateLicense: () => Promise<void>
   refreshLicense: () => Promise<void>
   hasFeature: (feature: Feature) => boolean
+  setDevTier: (tier: LicenseTier) => void
 }
 
 const LicenseContext = createContext<LicenseContextType | null>(null)
@@ -33,6 +34,7 @@ const TIER_FEATURES: Record<LicenseTier, Feature[]> = {
     'natural_language_sql',
     'query_optimization',
     'csv_reports',
+    'users_permissions',
   ],
   team: [
     'basic_gui',
@@ -44,6 +46,7 @@ const TIER_FEATURES: Record<LicenseTier, Feature[]> = {
     'natural_language_sql',
     'query_optimization',
     'csv_reports',
+    'users_permissions',
     'visualizations',
     'shared_dashboards',
     'team_collaboration',
@@ -117,6 +120,11 @@ export function LicenseProvider({ children }: { children: ReactNode }): JSX.Elem
     return TIER_FEATURES[tier].includes(feature)
   }, [tier])
 
+  // Dev-only: manually set tier for testing
+  const setDevTier = useCallback((newTier: LicenseTier) => {
+    setTier(newTier)
+  }, [])
+
   return (
     <LicenseContext.Provider
       value={{
@@ -128,6 +136,7 @@ export function LicenseProvider({ children }: { children: ReactNode }): JSX.Elem
         deactivateLicense,
         refreshLicense,
         hasFeature,
+        setDevTier,
       }}
     >
       {children}

@@ -183,6 +183,7 @@ const TIER_FEATURES: Record<LicenseTier, string[]> = {
     'natural_language_sql',
     'query_optimization',
     'csv_reports',
+    'users_permissions',
   ],
   team: [
     'basic_gui',
@@ -194,6 +195,7 @@ const TIER_FEATURES: Record<LicenseTier, string[]> = {
     'natural_language_sql',
     'query_optimization',
     'csv_reports',
+    'users_permissions',
     'visualizations',
     'shared_dashboards',
     'team_collaboration',

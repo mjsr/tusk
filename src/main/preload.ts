@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { ConnectionConfig, ConnectionTestResult, QueryResult, SavedConnection, ColumnInfo, TableInfo, SavedQuery } from '../shared/types'
+import type { ConnectionConfig, ConnectionTestResult, QueryResult, SavedConnection, ColumnInfo, TableInfo, SavedQuery, DatabaseRole, RoleMembership, TableGrant, SchemaGrant } from '../shared/types'
 
 const api = {
   // Database operations
@@ -33,6 +33,19 @@ const api = {
 
   getPrimaryKeys: (schema: string, table: string): Promise<string[]> =>
     ipcRenderer.invoke('db:get-primary-keys', schema, table),
+
+  // Users & Permissions
+  getRoles: (): Promise<DatabaseRole[]> =>
+    ipcRenderer.invoke('db:get-roles'),
+
+  getRoleMemberships: (role: string): Promise<RoleMembership[]> =>
+    ipcRenderer.invoke('db:get-role-memberships', role),
+
+  getTableGrants: (role: string): Promise<TableGrant[]> =>
+    ipcRenderer.invoke('db:get-table-grants', role),
+
+  getSchemaGrants: (role: string): Promise<SchemaGrant[]> =>
+    ipcRenderer.invoke('db:get-schema-grants', role),
 
   // Connection store
   getConnections: (): Promise<SavedConnection[]> =>
@@ -94,7 +107,26 @@ const api = {
     ipcRenderer.invoke('license:deactivate'),
 
   hasFeature: (feature: string): Promise<boolean> =>
-    ipcRenderer.invoke('license:has-feature', feature)
+    ipcRenderer.invoke('license:has-feature', feature),
+
+  // Secure storage
+  isSecureStorageAcknowledged: (): Promise<boolean> =>
+    ipcRenderer.invoke('security:is-acknowledged'),
+
+  acknowledgeSecureStorage: (): Promise<void> =>
+    ipcRenderer.invoke('security:acknowledge'),
+
+  isEncryptionAvailable: (): Promise<boolean> =>
+    ipcRenderer.invoke('security:is-encryption-available'),
+
+  secureStore: (key: string, value: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('security:store', key, value),
+
+  secureRetrieve: (key: string): Promise<{ success: boolean; value?: string; error?: string }> =>
+    ipcRenderer.invoke('security:retrieve', key),
+
+  secureDelete: (key: string): Promise<void> =>
+    ipcRenderer.invoke('security:delete', key)
 }
 
 contextBridge.exposeInMainWorld('api', api)

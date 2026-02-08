@@ -21,6 +21,7 @@ const FEATURE_INFO: Record<Feature, { name: string; tier: 'pro' | 'team'; descri
   shared_dashboards: { name: 'Shared Dashboards', tier: 'team', description: 'Collaborate with your team' },
   team_collaboration: { name: 'Team Collaboration', tier: 'team', description: 'Work together in real-time' },
   action_triggers: { name: 'Action Triggers', tier: 'team', description: 'Alerts when metrics change' },
+  users_permissions: { name: 'Users & Permissions', tier: 'pro', description: 'View database roles, permissions, and grants' },
 }
 
 export function UpgradePrompt({ feature, title, description }: UpgradePromptProps): JSX.Element {

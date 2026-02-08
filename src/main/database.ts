@@ -1,12 +1,13 @@
 import { ipcMain } from 'electron'
 import { Client } from 'pg'
-import type { ConnectionConfig, ConnectionTestResult, QueryResult } from '../shared/types'
+import type { ConnectionTestResult, QueryResult, DatabaseRole, RoleMembership, TableGrant, SchemaGrant } from '../shared/types'
 import {
   validateConnectionConfig,
   validateSQL,
   validateSchemaName,
   validateTableName,
-  validateLimit
+  validateLimit,
+  validateRoleName
 } from './validation'
 
 let activeClient: Client | null = null
@@ -306,5 +307,136 @@ export function setupDatabaseHandlers() {
     `, [schema, table])
 
     return result.rows.map(row => row.column_name)
+  })
+
+  // Users & Permissions handlers
+  ipcMain.handle('db:get-roles', async (): Promise<DatabaseRole[]> => {
+    if (!activeClient) {
+      throw new Error('Not connected to database')
+    }
+
+    const result = await activeClient.query(`
+      SELECT
+        rolname as name,
+        rolsuper as is_superuser,
+        rolcreatedb as can_create_db,
+        rolcreaterole as can_create_role,
+        rolcanlogin as can_login,
+        rolreplication as has_replication,
+        rolconnlimit as connection_limit,
+        rolvaliduntil as valid_until,
+        oid
+      FROM pg_roles
+      ORDER BY rolname
+    `)
+
+    return result.rows.map(row => ({
+      name: row.name,
+      isSuperuser: row.is_superuser,
+      canCreateDb: row.can_create_db,
+      canCreateRole: row.can_create_role,
+      canLogin: row.can_login,
+      hasReplication: row.has_replication,
+      connectionLimit: row.connection_limit,
+      validUntil: row.valid_until ? row.valid_until.toISOString() : null,
+      oid: row.oid
+    }))
+  })
+
+  ipcMain.handle('db:get-role-memberships', async (_, rawRole: unknown): Promise<RoleMembership[]> => {
+    if (!activeClient) {
+      throw new Error('Not connected to database')
+    }
+
+    const role = validateRoleName(rawRole)
+
+    const result = await activeClient.query(`
+      SELECT
+        r.rolname as role_name,
+        m.rolname as member_name,
+        am.admin_option
+      FROM pg_auth_members am
+      JOIN pg_roles r ON r.oid = am.roleid
+      JOIN pg_roles m ON m.oid = am.member
+      WHERE r.rolname = $1 OR m.rolname = $1
+      ORDER BY r.rolname, m.rolname
+    `, [role])
+
+    return result.rows.map(row => ({
+      roleName: row.role_name,
+      memberName: row.member_name,
+      adminOption: row.admin_option
+    }))
+  })
+
+  ipcMain.handle('db:get-table-grants', async (_, rawRole: unknown): Promise<TableGrant[]> => {
+    if (!activeClient) {
+      throw new Error('Not connected to database')
+    }
+
+    const role = validateRoleName(rawRole)
+
+    const result = await activeClient.query(`
+      SELECT
+        table_schema as schema_name,
+        table_name,
+        grantee,
+        array_agg(privilege_type ORDER BY privilege_type) as privileges
+      FROM information_schema.role_table_grants
+      WHERE grantee = $1
+        AND table_schema NOT IN ('pg_catalog', 'information_schema')
+      GROUP BY table_schema, table_name, grantee
+      ORDER BY table_schema, table_name
+    `, [role])
+
+    return result.rows.map(row => ({
+      schemaName: row.schema_name,
+      tableName: row.table_name,
+      grantee: row.grantee,
+      privileges: row.privileges
+    }))
+  })
+
+  ipcMain.handle('db:get-schema-grants', async (_, rawRole: unknown): Promise<SchemaGrant[]> => {
+    if (!activeClient) {
+      throw new Error('Not connected to database')
+    }
+
+    const role = validateRoleName(rawRole)
+
+    // Get all non-system schemas and check privileges
+    const result = await activeClient.query(`
+      SELECT
+        n.nspname as schema_name,
+        $1::text as grantee,
+        CASE WHEN has_schema_privilege($1, n.nspname, 'USAGE') THEN 'USAGE' ELSE NULL END as usage_priv,
+        CASE WHEN has_schema_privilege($1, n.nspname, 'CREATE') THEN 'CREATE' ELSE NULL END as create_priv
+      FROM pg_namespace n
+      WHERE n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+        AND n.nspname NOT LIKE 'pg_temp_%'
+        AND n.nspname NOT LIKE 'pg_toast_temp_%'
+        AND (has_schema_privilege($1, n.nspname, 'USAGE') OR has_schema_privilege($1, n.nspname, 'CREATE'))
+      ORDER BY n.nspname
+    `, [role])
+
+    const grants: SchemaGrant[] = []
+    for (const row of result.rows) {
+      if (row.usage_priv) {
+        grants.push({
+          schemaName: row.schema_name,
+          grantee: row.grantee,
+          privilegeType: 'USAGE'
+        })
+      }
+      if (row.create_priv) {
+        grants.push({
+          schemaName: row.schema_name,
+          grantee: row.grantee,
+          privilegeType: 'CREATE'
+        })
+      }
+    }
+
+    return grants
   })
 }
