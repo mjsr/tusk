@@ -7,6 +7,7 @@ import { setupAutoUpdater } from './updater'
 import { setupExportHandlers } from './export'
 import { setupLicenseHandlers } from './license'
 import { setupSecureStorageHandlers } from './secureStorage'
+import { setupAuthHandlers } from './auth'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -48,6 +49,7 @@ app.whenReady().then(() => {
   setupExportHandlers()
   setupLicenseHandlers()
   setupSecureStorageHandlers()
+  setupAuthHandlers()
   createWindow()
 
   // Set up auto-updater after window is created

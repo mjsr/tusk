@@ -215,3 +215,45 @@ export function validateRoleName(role: unknown): string {
 
   return role
 }
+
+// Auth validators
+export function validateEmail(email: unknown): string {
+  if (!isString(email) || email.length === 0 || email.length > 320) {
+    throw new ValidationError('Invalid email')
+  }
+
+  // Basic email format check
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new ValidationError('Invalid email format')
+  }
+
+  return email.toLowerCase().trim()
+}
+
+export function validatePassword(password: unknown): string {
+  if (!isString(password)) {
+    throw new ValidationError('Password must be a string')
+  }
+
+  if (password.length < 8) {
+    throw new ValidationError('Password must be at least 8 characters')
+  }
+
+  if (password.length > 256) {
+    throw new ValidationError('Password too long')
+  }
+
+  return password
+}
+
+export function validateFullName(name: unknown): string | undefined {
+  if (name === undefined || name === null || name === '') {
+    return undefined
+  }
+
+  if (!isString(name) || name.length > 200) {
+    throw new ValidationError('Invalid name')
+  }
+
+  return name.trim()
+}

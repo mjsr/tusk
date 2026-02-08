@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { ConnectionConfig, ConnectionTestResult, QueryResult, SavedConnection, ColumnInfo, TableInfo, SavedQuery, DatabaseRole, RoleMembership, TableGrant, SchemaGrant } from '../shared/types'
+import type { ConnectionConfig, ConnectionTestResult, QueryResult, SavedConnection, ColumnInfo, TableInfo, SavedQuery, DatabaseRole, RoleMembership, TableGrant, SchemaGrant, User } from '../shared/types'
 
 const api = {
   // Database operations
@@ -126,7 +126,35 @@ const api = {
     ipcRenderer.invoke('security:retrieve', key),
 
   secureDelete: (key: string): Promise<void> =>
-    ipcRenderer.invoke('security:delete', key)
+    ipcRenderer.invoke('security:delete', key),
+
+  // Auth
+  authSignUp: (email: string, password: string, fullName?: string): Promise<{ success: boolean; user?: User; error?: string }> =>
+    ipcRenderer.invoke('auth:signup', email, password, fullName),
+
+  authSignIn: (email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> =>
+    ipcRenderer.invoke('auth:signin', email, password),
+
+  authSignOut: (): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('auth:signout'),
+
+  authGetSession: (): Promise<{ user: User | null; isAuthenticated: boolean }> =>
+    ipcRenderer.invoke('auth:get-session'),
+
+  authRefresh: (): Promise<{ success: boolean; user?: User; error?: string }> =>
+    ipcRenderer.invoke('auth:refresh'),
+
+  authResetPassword: (email: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('auth:reset-password', email),
+
+  authSkip: (): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('auth:skip'),
+
+  onAuthStateChange: (callback: (event: { user: User | null }) => void) => {
+    const listener = (_: unknown, data: { user: User | null }) => callback(data)
+    ipcRenderer.on('auth:state-change', listener)
+    return () => ipcRenderer.removeListener('auth:state-change', listener)
+  }
 }
 
 contextBridge.exposeInMainWorld('api', api)

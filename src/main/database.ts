@@ -330,17 +330,26 @@ export function setupDatabaseHandlers() {
       ORDER BY rolname
     `)
 
-    return result.rows.map(row => ({
-      name: row.name,
-      isSuperuser: row.is_superuser,
-      canCreateDb: row.can_create_db,
-      canCreateRole: row.can_create_role,
-      canLogin: row.can_login,
-      hasReplication: row.has_replication,
-      connectionLimit: row.connection_limit,
-      validUntil: row.valid_until ? row.valid_until.toISOString() : null,
-      oid: row.oid
-    }))
+    return result.rows.map(row => {
+      let validUntil: string | null = null
+      if (row.valid_until) {
+        // Handle both Date objects and strings
+        validUntil = row.valid_until instanceof Date
+          ? row.valid_until.toISOString()
+          : String(row.valid_until)
+      }
+      return {
+        name: row.name,
+        isSuperuser: row.is_superuser,
+        canCreateDb: row.can_create_db,
+        canCreateRole: row.can_create_role,
+        canLogin: row.can_login,
+        hasReplication: row.has_replication,
+        connectionLimit: row.connection_limit,
+        validUntil,
+        oid: row.oid
+      }
+    })
   })
 
   ipcMain.handle('db:get-role-memberships', async (_, rawRole: unknown): Promise<RoleMembership[]> => {
@@ -389,12 +398,22 @@ export function setupDatabaseHandlers() {
       ORDER BY table_schema, table_name
     `, [role])
 
-    return result.rows.map(row => ({
-      schemaName: row.schema_name,
-      tableName: row.table_name,
-      grantee: row.grantee,
-      privileges: row.privileges
-    }))
+    return result.rows.map(row => {
+      // Handle privileges as array or parse from PostgreSQL array string format
+      let privileges: string[] = []
+      if (Array.isArray(row.privileges)) {
+        privileges = row.privileges
+      } else if (typeof row.privileges === 'string') {
+        // PostgreSQL array format: {SELECT,INSERT,UPDATE}
+        privileges = row.privileges.replace(/^\{|\}$/g, '').split(',').filter(Boolean)
+      }
+      return {
+        schemaName: row.schema_name,
+        tableName: row.table_name,
+        grantee: row.grantee,
+        privileges
+      }
+    })
   })
 
   ipcMain.handle('db:get-schema-grants', async (_, rawRole: unknown): Promise<SchemaGrant[]> => {

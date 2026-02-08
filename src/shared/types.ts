@@ -151,3 +151,24 @@ export interface SchemaGrant {
   grantee: string
   privilegeType: 'USAGE' | 'CREATE'
 }
+
+// Auth types
+export interface User {
+  id: string
+  email: string
+  fullName?: string
+  avatarUrl?: string
+}
+
+export interface AuthSession {
+  user: User
+  accessToken: string
+  refreshToken: string
+  expiresAt: number
+}
+
+export interface AuthState {
+  user: User | null
+  isAuthenticated: boolean
+  isLoading: boolean
+}
