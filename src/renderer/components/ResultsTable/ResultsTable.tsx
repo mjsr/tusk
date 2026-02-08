@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { QueryResult } from '../../../shared/types'
 
 interface Props {
@@ -5,6 +6,8 @@ interface Props {
   error: string | null
   isLoading: boolean
 }
+
+type ExportFormat = 'csv' | 'json'
 
 export default function ResultsTable({ result, error, isLoading }: Props) {
   if (isLoading) {

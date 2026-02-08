@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 import { setupDatabaseHandlers } from './database'
 import { setupConnectionStore } from './store'
 import { setupAutoUpdater } from './updater'
+import { setupExportHandlers } from './export'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -42,6 +43,7 @@ app.whenReady().then(() => {
   // Set up IPC handlers BEFORE creating window
   setupDatabaseHandlers()
   setupConnectionStore()
+  setupExportHandlers()
   createWindow()
 
   // Set up auto-updater after window is created

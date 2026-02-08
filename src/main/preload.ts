@@ -60,6 +60,10 @@ const api = {
   getQueryFolders: (): Promise<string[]> =>
     ipcRenderer.invoke('store:get-query-folders'),
 
+  // Export
+  exportResults: (data: { result: QueryResult; format: 'csv' | 'json'; filename?: string }): Promise<{ success: boolean; path?: string; error?: string }> =>
+    ipcRenderer.invoke('export:save', data),
+
   // Auto-updater
   checkForUpdates: (): Promise<void> =>
     ipcRenderer.invoke('updater:check'),
