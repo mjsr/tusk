@@ -224,3 +224,101 @@ Before adding any feature, verify:
 - Regularly run `npm audit` to check for vulnerabilities
 - Keep Electron updated for security patches
 - Avoid unnecessary dependencies that increase attack surface
+
+## Release Workflow
+
+### GitHub Repository
+- **Repo**: https://github.com/mjsr/tusk
+- **Releases**: https://github.com/mjsr/tusk/releases
+
+### Prerequisites
+1. GitHub token in `.env` file:
+   ```
+   GH_TOKEN=ghp_xxxxxxxxxxxx
+   ```
+2. Token needs `repo` scope (create at https://github.com/settings/tokens)
+
+### Release Commands
+
+```bash
+# Build for current platform only (no upload)
+npm run dist
+
+# Build for specific platform (no upload)
+npm run dist:mac
+npm run dist:win
+npm run dist:linux
+
+# Build AND publish to GitHub Releases
+export $(cat .env | xargs) && npm run release
+```
+
+### Release Checklist
+
+1. **Update version** in `package.json`
+2. **Commit changes**: `git add -A && git commit -m "Release vX.X.X"`
+3. **Run release**: `export $(cat .env | xargs) && npm run release`
+4. **Verify**: Check https://github.com/mjsr/tusk/releases
+5. **Publish draft** (if needed): `gh release edit vX.X.X --draft=false`
+
+### Output Files
+Releases are built to `release/` folder:
+- macOS: `Tusk-X.X.X-arm64.dmg`, `Tusk-X.X.X-arm64-mac.zip`
+- Windows: `Tusk-X.X.X-setup.exe`, `Tusk-X.X.X-win.zip`
+- Linux: `Tusk-X.X.X.AppImage`, `Tusk-X.X.X.deb`
+
+### Auto-Updates
+The app checks for updates on startup via `electron-updater`. Users are notified when a new version is available on GitHub Releases.
+
+### Code Signing (Production)
+For proper macOS distribution without Gatekeeper warnings:
+1. Get Apple Developer account ($99/year)
+2. Set environment variables:
+   ```bash
+   CSC_LINK=/path/to/certificate.p12
+   CSC_KEY_PASSWORD=password
+   APPLE_ID=your@email.com
+   APPLE_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx
+   APPLE_TEAM_ID=XXXXXXXXXX
+   ```
+3. Add to `package.json` build config:
+   ```json
+   "mac": {
+     "hardenedRuntime": true,
+     "notarize": true
+   }
+   ```
+
+## Website
+
+### Development
+```bash
+cd website && npm run dev
+# Runs at http://localhost:3000
+```
+
+### Deploy
+The website is a Next.js app in `website/`. Deploy to Vercel:
+```bash
+cd website && npx vercel
+```
+
+### Download Links
+Downloads point to GitHub Releases:
+- macOS: `https://github.com/mjsr/tusk/releases/download/vX.X.X/Tusk-X.X.X-arm64.dmg`
+- All releases: `https://github.com/mjsr/tusk/releases`
+
+## Licensing (Open Core)
+
+### Tiers
+- **Free**: Basic GUI, multiple connections, query history
+- **Pro**: AI queries, natural language SQL, CSV reports ($12/mo)
+- **Team**: Visualizations, dashboards, collaboration ($29/user/mo)
+
+### Demo License Keys (Testing)
+- Pro: `TUSK-PRO-DEMO1234-ABCD`
+- Team: `TUSK-TEAM-DEMO5678-EFGH`
+
+### API Endpoints
+- `POST /api/license/validate` - Validate license key
+- `POST /api/ai/query` - AI query generation (Pro+)
