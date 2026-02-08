@@ -5,6 +5,7 @@ import { setupDatabaseHandlers } from './database'
 import { setupConnectionStore } from './store'
 import { setupAutoUpdater } from './updater'
 import { setupExportHandlers } from './export'
+import { setupLicenseHandlers } from './license'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -44,6 +45,7 @@ app.whenReady().then(() => {
   setupDatabaseHandlers()
   setupConnectionStore()
   setupExportHandlers()
+  setupLicenseHandlers()
   createWindow()
 
   // Set up auto-updater after window is created

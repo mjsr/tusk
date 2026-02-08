@@ -18,6 +18,8 @@ export default function DataEditor({ result, tableContext, onRefresh }: Props) {
   const [showConfirm, setShowConfirm] = useState(false)
   const [isExecuting, setIsExecuting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
+  const [showExportMenu, setShowExportMenu] = useState(false)
 
   const canEdit = tableContext !== null && tableContext.primaryKeys.length > 0
 
@@ -168,6 +170,26 @@ export default function DataEditor({ result, tableContext, onRefresh }: Props) {
     return change?.changedColumns?.includes(column) ?? false
   }
 
+  const handleExport = async (format: 'csv' | 'json') => {
+    setShowExportMenu(false)
+    setIsExporting(true)
+    try {
+      const tableName = tableContext?.table || 'data'
+      const response = await window.api.exportResults({
+        result,
+        format,
+        filename: `${tableName}-${new Date().toISOString().slice(0, 10)}`
+      })
+      if (!response.success && response.error !== 'Export canceled') {
+        setError(`Export failed: ${response.error}`)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Export failed')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="h-full flex flex-col bg-db-bg">
       {/* Toolbar */}
@@ -217,6 +239,61 @@ export default function DataEditor({ result, tableContext, onRefresh }: Props) {
               Add Row
             </button>
           )}
+
+          {/* Export dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={isExporting}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-db-text-secondary hover:text-db-text hover:bg-db-surface rounded-md transition-colors disabled:opacity-50"
+            >
+              {isExporting ? (
+                <>
+                  <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Export</span>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </>
+              )}
+            </button>
+
+            {showExportMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowExportMenu(false)} />
+                <div className="absolute right-0 mt-1 w-36 bg-db-surface border border-db-border rounded-lg shadow-xl z-20 py-1">
+                  <button
+                    onClick={() => handleExport('csv')}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-db-text hover:bg-db-elevated transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-db-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>CSV</span>
+                  </button>
+                  <button
+                    onClick={() => handleExport('json')}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-db-text hover:bg-db-elevated transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-db-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <span>JSON</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

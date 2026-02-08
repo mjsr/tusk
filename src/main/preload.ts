@@ -78,7 +78,23 @@ const api = {
     const listener = (_: unknown, data: { status: string; data?: unknown }) => callback(data)
     ipcRenderer.on('updater:status', listener)
     return () => ipcRenderer.removeListener('updater:status', listener)
-  }
+  },
+
+  // License management
+  getLicenseState: (): Promise<{ tier: string; license: unknown; lastValidated: string | null }> =>
+    ipcRenderer.invoke('license:get-state'),
+
+  activateLicense: (key: string): Promise<{ success: boolean; license?: unknown; error?: string }> =>
+    ipcRenderer.invoke('license:activate', key),
+
+  validateLicense: (): Promise<{ valid: boolean; license?: unknown; error?: string }> =>
+    ipcRenderer.invoke('license:validate'),
+
+  deactivateLicense: (): Promise<void> =>
+    ipcRenderer.invoke('license:deactivate'),
+
+  hasFeature: (feature: string): Promise<boolean> =>
+    ipcRenderer.invoke('license:has-feature', feature)
 }
 
 contextBridge.exposeInMainWorld('api', api)

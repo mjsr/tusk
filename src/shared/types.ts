@@ -84,3 +84,37 @@ export interface SavedQuery {
   createdAt: string
   updatedAt: string
 }
+
+// License types
+export type LicenseTier = 'free' | 'pro' | 'team'
+
+export interface License {
+  key: string
+  tier: LicenseTier
+  email: string
+  expiresAt: string | null
+  maxSeats?: number
+  createdAt: string
+}
+
+export interface LicenseState {
+  tier: LicenseTier
+  license: License | null
+  lastValidated: string | null
+}
+
+// Feature flags
+export type Feature =
+  | 'basic_gui'
+  | 'multiple_connections'
+  | 'query_history'
+  | 'autocomplete'
+  | 'syntax_highlighting'
+  | 'ai_queries'
+  | 'natural_language_sql'
+  | 'query_optimization'
+  | 'csv_reports'
+  | 'visualizations'
+  | 'shared_dashboards'
+  | 'team_collaboration'
+  | 'action_triggers'
