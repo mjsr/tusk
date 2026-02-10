@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parseLicenseKey, type License, type LicenseValidationResult } from '@/lib/license'
 
+export const runtime = 'edge'
+
 // In production, this would query a database
 // For now, we'll use a simple in-memory store for demo purposes
 const DEMO_LICENSES: Record<string, License> = {

@@ -22,25 +22,25 @@ const authStore = new Store<{
 })
 
 // Encrypt session data for storage
-function encryptSession(session: AuthSession): string {
+function encryptSession(session: AuthSession): { encrypted: string } | { error: string } {
   const data = JSON.stringify(session)
-  if (safeStorage.isEncryptionAvailable()) {
-    return safeStorage.encryptString(data).toString('base64')
+  if (!safeStorage.isEncryptionAvailable()) {
+    // Reject storing sensitive auth data without encryption
+    return { error: 'Secure storage is not available' }
   }
-  // Fallback to base64 (not ideal but better than plaintext)
-  return Buffer.from(data).toString('base64')
+  return { encrypted: safeStorage.encryptString(data).toString('base64') }
 }
 
 // Decrypt session data from storage
 function decryptSession(encrypted: string): AuthSession | null {
+  // Require encryption to be available
+  if (!safeStorage.isEncryptionAvailable()) {
+    return null
+  }
+
   try {
     const buffer = Buffer.from(encrypted, 'base64')
-    let data: string
-    if (safeStorage.isEncryptionAvailable()) {
-      data = safeStorage.decryptString(buffer)
-    } else {
-      data = buffer.toString()
-    }
+    const data = safeStorage.decryptString(buffer)
     return JSON.parse(data) as AuthSession
   } catch {
     return null
@@ -48,9 +48,14 @@ function decryptSession(encrypted: string): AuthSession | null {
 }
 
 // Store session securely
-function storeSession(session: AuthSession): void {
-  const encrypted = encryptSession(session)
-  authStore.set('encryptedSession', encrypted)
+function storeSession(session: AuthSession): boolean {
+  const result = encryptSession(session)
+  if ('error' in result) {
+    console.error('Cannot store session:', result.error)
+    return false
+  }
+  authStore.set('encryptedSession', result.encrypted)
+  return true
 }
 
 // Retrieve stored session
@@ -334,11 +339,44 @@ export function setupAuthHandlers(): void {
   })
 }
 
+// Validate deep link URL for security
+function isValidDeepLink(url: string): { valid: boolean; urlObj?: URL; error?: string } {
+  try {
+    const urlObj = new URL(url)
+
+    // Must use our protocol
+    if (urlObj.protocol !== 'tusk:') {
+      return { valid: false, error: 'Invalid protocol' }
+    }
+
+    // Only allow specific known paths
+    const allowedPaths = ['/auth/callback', '/reset-password']
+    const path = urlObj.pathname || urlObj.hostname // URL parsing quirk with custom protocols
+
+    // Normalize path - handle both tusk://auth/callback and tusk:auth/callback formats
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`
+
+    if (!allowedPaths.some(p => normalizedPath.startsWith(p))) {
+      return { valid: false, error: 'Unknown deep link path' }
+    }
+
+    return { valid: true, urlObj }
+  } catch {
+    return { valid: false, error: 'Invalid URL format' }
+  }
+}
+
 // Handle deep link callback from magic link
 export async function handleAuthDeepLink(url: string): Promise<void> {
   try {
-    // Parse the URL - magic links come as tusk://auth/callback#access_token=...&refresh_token=...
-    const urlObj = new URL(url)
+    // Validate the deep link URL
+    const validation = isValidDeepLink(url)
+    if (!validation.valid || !validation.urlObj) {
+      console.error('Invalid deep link:', validation.error)
+      return
+    }
+
+    const urlObj = validation.urlObj
 
     // Supabase puts tokens in the hash fragment
     const hashParams = new URLSearchParams(urlObj.hash.substring(1))

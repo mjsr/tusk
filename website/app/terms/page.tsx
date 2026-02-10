@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,10 +12,10 @@ export default function Terms() {
     <div className="min-h-screen">
       <nav className="border-b border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2 text-xl font-bold">
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold">
             <Image src="/icon.png" alt="Tusk" width={28} height={28} className="rounded" />
             Tusk
-          </a>
+          </Link>
         </div>
       </nav>
 

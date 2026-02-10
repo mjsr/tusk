@@ -19,8 +19,28 @@ export interface LicenseState {
   lastValidated: string | null
 }
 
-// API base URL - change for production
-const API_BASE_URL = process.env.TUSK_API_URL || 'http://localhost:3000'
+// API base URL - hardcoded for security, env var only for development
+const PRODUCTION_API_URL = 'https://api.tusk.dev'
+
+function getApiBaseUrl(): string {
+  // Only allow override in development mode
+  if (process.env.NODE_ENV === 'development' && process.env.TUSK_API_URL) {
+    const devUrl = process.env.TUSK_API_URL
+    // Validate it's a valid URL
+    try {
+      const parsed = new URL(devUrl)
+      // Allow localhost in dev only
+      if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+        return devUrl
+      }
+    } catch {
+      // Fall through to production URL
+    }
+  }
+  return PRODUCTION_API_URL
+}
+
+const API_BASE_URL = getApiBaseUrl()
 
 // Store for license data
 const store = new Store<{
@@ -44,14 +64,32 @@ function getMachineId(): string {
   return Buffer.from(`${os.hostname()}-${os.platform()}-${os.arch()}`).toString('base64')
 }
 
+// Validate license key format (basic format check)
+function isValidLicenseKeyFormat(key: string): boolean {
+  // License key format: TUSK-TIER-XXXXXXXX-XXXX (e.g., TUSK-PRO-DEMO1234-ABCD)
+  const pattern = /^TUSK-(FREE|PRO|TEAM)-[A-Z0-9]{8}-[A-Z0-9]{4}$/
+  return pattern.test(key.toUpperCase())
+}
+
 // Encrypt and store license key
-function storeLicenseKey(key: string): void {
-  if (safeStorage.isEncryptionAvailable()) {
+function storeLicenseKey(key: string): { success: boolean; error?: string } {
+  if (!safeStorage.isEncryptionAvailable()) {
+    // Reject storing sensitive data without encryption
+    return {
+      success: false,
+      error: 'Secure storage is not available. Cannot store license key securely.',
+    }
+  }
+
+  try {
     const encrypted = safeStorage.encryptString(key)
     store.set('encryptedLicenseKey', encrypted.toString('base64'))
-  } else {
-    // Fallback: store as-is (less secure)
-    store.set('encryptedLicenseKey', Buffer.from(key).toString('base64'))
+    return { success: true }
+  } catch (err) {
+    return {
+      success: false,
+      error: 'Failed to encrypt license key',
+    }
   }
 }
 
@@ -60,13 +98,16 @@ function getLicenseKey(): string | null {
   const encrypted = store.get('encryptedLicenseKey')
   if (!encrypted) return null
 
+  // Require encryption to be available
+  if (!safeStorage.isEncryptionAvailable()) {
+    // Clear any potentially insecure data
+    store.set('encryptedLicenseKey', null)
+    return null
+  }
+
   try {
     const buffer = Buffer.from(encrypted, 'base64')
-    if (safeStorage.isEncryptionAvailable()) {
-      return safeStorage.decryptString(buffer)
-    } else {
-      return buffer.toString()
-    }
+    return safeStorage.decryptString(buffer)
   } catch {
     return null
   }
@@ -120,11 +161,26 @@ export function setupLicenseHandlers(): void {
   })
 
   // Activate a license key
-  ipcMain.handle('license:activate', async (_, key: string): Promise<{ success: boolean; license?: License; error?: string }> => {
+  ipcMain.handle('license:activate', async (_, rawKey: unknown): Promise<{ success: boolean; license?: License; error?: string }> => {
+    // Validate input type
+    if (typeof rawKey !== 'string') {
+      return { success: false, error: 'Invalid license key format' }
+    }
+
+    const key = rawKey.trim().toUpperCase()
+
+    // Validate license key format before sending to server
+    if (!isValidLicenseKeyFormat(key)) {
+      return { success: false, error: 'Invalid license key format. Expected format: TUSK-TIER-XXXXXXXX-XXXX' }
+    }
+
     const result = await validateLicense(key)
 
     if (result.valid && result.license) {
-      storeLicenseKey(key)
+      const storeResult = storeLicenseKey(key)
+      if (!storeResult.success) {
+        return { success: false, error: storeResult.error }
+      }
       store.set('licenseCache', result.license)
       store.set('lastValidated', new Date().toISOString())
       return { success: true, license: result.license }

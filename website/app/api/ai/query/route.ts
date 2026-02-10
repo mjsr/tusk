@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parseLicenseKey, hasFeature } from '@/lib/license'
 
+export const runtime = 'edge'
+
 interface AIQueryRequest {
   licenseKey: string
   prompt: string          // Natural language query

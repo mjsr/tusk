@@ -16,7 +16,9 @@
     "dist:mac": "electron-vite build && electron-builder --mac",
     "dist:win": "electron-vite build && electron-builder --win",
     "dist:linux": "electron-vite build && electron-builder --linux",
-    "release": "electron-vite build && electron-builder --publish always"
+    "release": "electron-vite build && electron-builder --publish always",
+    "release:full": "npm run release && npm run deploy:website",
+    "deploy:website": "./scripts/deploy-website.sh"
   },
   "build": {
     "appId": "com.mjsr.tusk",

@@ -8,6 +8,30 @@ interface ExportData {
   filename?: string
 }
 
+// Sanitize filename to prevent path traversal and invalid characters
+function sanitizeFilename(filename: string): string {
+  // Remove path traversal attempts
+  let safe = filename.replace(/\.\./g, '')
+
+  // Remove path separators
+  safe = safe.replace(/[/\\]/g, '')
+
+  // Remove other potentially dangerous characters
+  safe = safe.replace(/[<>:"|?*\x00-\x1f]/g, '')
+
+  // Limit length
+  if (safe.length > 100) {
+    safe = safe.substring(0, 100)
+  }
+
+  // Ensure we have something
+  if (!safe || safe.trim() === '') {
+    safe = 'export'
+  }
+
+  return safe.trim()
+}
+
 function resultToCSV(result: QueryResult): string {
   const headers = result.fields.map(f => f.name)
 
@@ -43,7 +67,9 @@ export function setupExportHandlers() {
       return { success: false, error: 'No window found' }
     }
 
-    const defaultFilename = filename || `export-${Date.now()}`
+    // Sanitize the filename to prevent path traversal attacks
+    const rawFilename = filename || `export-${Date.now()}`
+    const defaultFilename = sanitizeFilename(rawFilename)
     const extension = format === 'csv' ? 'csv' : 'json'
 
     const { filePath, canceled } = await dialog.showSaveDialog(window, {

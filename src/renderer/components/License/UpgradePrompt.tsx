@@ -57,8 +57,8 @@ export function UpgradePrompt({ feature, title, description }: UpgradePromptProp
       <div className="flex gap-3">
         <button
           onClick={() => {
-            // Open upgrade URL in browser
-            window.open('https://tusk.dev/pricing', '_blank')
+            // Open upgrade URL in browser via safe IPC handler
+            window.api.openExternal('https://tusk.dev/pricing')
           }}
           className="px-4 py-2 bg-db-accent hover:bg-db-accent/80 text-white rounded-lg font-medium transition-colors"
         >

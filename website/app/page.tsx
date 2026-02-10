@@ -134,7 +134,7 @@ function Features() {
             A Postgres client that gets out of your way.
           </h2>
           <p className="text-muted text-lg max-w-2xl mx-auto">
-            Everything you need to work with your database, nothing you don't.
+            Everything you need to work with your database, nothing you don&apos;t.
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -223,7 +223,7 @@ function AnalyticsSection() {
             Team Feature
           </span>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Don't wonder. Act.
+            Don&apos;t wonder. Act.
           </h2>
           <p className="text-muted text-lg max-w-2xl mx-auto">
             Turn your database into a product insights engine.

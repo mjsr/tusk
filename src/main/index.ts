@@ -8,6 +8,7 @@ import { setupExportHandlers } from './export'
 import { setupLicenseHandlers } from './license'
 import { setupSecureStorageHandlers } from './secureStorage'
 import { setupAuthHandlers, handleAuthDeepLink, setMainWindowGetter } from './auth'
+import { setupShellHandlers } from './shell'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -95,6 +96,7 @@ app.whenReady().then(() => {
   setupLicenseHandlers()
   setupSecureStorageHandlers()
   setupAuthHandlers()
+  setupShellHandlers()
   setMainWindowGetter(getMainWindow)
   createWindow()
 

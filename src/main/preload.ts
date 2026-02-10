@@ -157,7 +157,11 @@ const api = {
     const listener = (_: unknown, data: { user: User | null }) => callback(data)
     ipcRenderer.on('auth:state-change', listener)
     return () => ipcRenderer.removeListener('auth:state-change', listener)
-  }
+  },
+
+  // Shell - safe external link opening
+  openExternal: (url: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('shell:open-external', url)
 }
 
 contextBridge.exposeInMainWorld('api', api)

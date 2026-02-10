@@ -38,14 +38,17 @@ export function setupSecureStorageHandlers(): void {
 
   // Encrypt and store a value
   ipcMain.handle('security:store', (_, key: string, value: string): { success: boolean; error?: string } => {
-    try {
-      if (safeStorage.isEncryptionAvailable()) {
-        const encrypted = safeStorage.encryptString(value)
-        encryptedStore.set(key, encrypted.toString('base64'))
-      } else {
-        // Fallback: base64 encode (not secure, but better than plaintext)
-        encryptedStore.set(key, Buffer.from(value).toString('base64'))
+    // Require encryption to be available - never store sensitive data in plaintext
+    if (!safeStorage.isEncryptionAvailable()) {
+      return {
+        success: false,
+        error: 'Secure storage is not available on this system. Cannot store sensitive data.',
       }
+    }
+
+    try {
+      const encrypted = safeStorage.encryptString(value)
+      encryptedStore.set(key, encrypted.toString('base64'))
       return { success: true }
     } catch (error) {
       return {
@@ -57,6 +60,14 @@ export function setupSecureStorageHandlers(): void {
 
   // Retrieve and decrypt a value
   ipcMain.handle('security:retrieve', (_, key: string): { success: boolean; value?: string; error?: string } => {
+    // Require encryption to be available
+    if (!safeStorage.isEncryptionAvailable()) {
+      return {
+        success: false,
+        error: 'Secure storage is not available on this system.',
+      }
+    }
+
     try {
       const stored = encryptedStore.get(key)
       if (!stored) {
@@ -64,14 +75,8 @@ export function setupSecureStorageHandlers(): void {
       }
 
       const buffer = Buffer.from(stored, 'base64')
-
-      if (safeStorage.isEncryptionAvailable()) {
-        const decrypted = safeStorage.decryptString(buffer)
-        return { success: true, value: decrypted }
-      } else {
-        // Fallback: base64 decode
-        return { success: true, value: buffer.toString() }
-      }
+      const decrypted = safeStorage.decryptString(buffer)
+      return { success: true, value: decrypted }
     } catch (error) {
       return {
         success: false,
