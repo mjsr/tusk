@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import QueryTabs, { QueryTabsHandle } from '../QueryEditor/QueryTabs'
 import { SchemaBrowser } from '../SchemaBrowser'
 import { UsersBrowser } from '../UsersBrowser'
+import { UserMenu } from '../UserMenu'
 import ThemeToggle from '../ThemeToggle'
 import { useLicense } from '../../contexts/LicenseContext'
 import type { LicenseTier } from '../../../shared/types'
@@ -133,6 +134,11 @@ export default function Layout({ connectionName, onDisconnect }: Props) {
             </svg>
             <span>Disconnect</span>
           </button>
+
+          <div className="w-px h-4 bg-db-border" />
+
+          {/* User menu */}
+          <UserMenu />
         </div>
       </div>
 

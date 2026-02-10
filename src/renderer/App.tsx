@@ -5,6 +5,7 @@ import { LoginScreen, SignupScreen, ForgotPasswordScreen } from './components/Au
 import { ThemeProvider } from './contexts/ThemeContext'
 import { LicenseProvider } from './contexts/LicenseContext'
 import { AuthProvider, useAuth, AuthScreen } from './contexts/AuthContext'
+import { SchemaProvider } from './contexts/SchemaContext'
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -66,7 +67,9 @@ function MainApp() {
       {!isConnected ? (
         <ConnectionManager onConnect={handleConnect} />
       ) : (
-        <Layout connectionName={connectionName} onDisconnect={handleDisconnect} />
+        <SchemaProvider>
+          <Layout connectionName={connectionName} onDisconnect={handleDisconnect} />
+        </SchemaProvider>
       )}
     </>
   )

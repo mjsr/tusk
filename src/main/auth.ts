@@ -4,6 +4,13 @@ import { supabase } from './supabase'
 import { validateEmail, validatePassword, validateFullName, ValidationError } from './validation'
 import type { User, AuthSession } from '../shared/types'
 
+// For accessing main window from deep link handler
+let getMainWindowFn: (() => BrowserWindow | null) | null = null
+
+export function setMainWindowGetter(fn: () => BrowserWindow | null): void {
+  getMainWindowFn = fn
+}
+
 // Secure store for auth tokens
 const authStore = new Store<{
   encryptedSession: string | null
@@ -297,4 +304,84 @@ export function setupAuthHandlers(): void {
     emitAuthStateChange(null)
     return { success: true }
   })
+
+  // Send magic link (passwordless sign in)
+  ipcMain.handle('auth:send-magic-link', async (_, rawEmail: unknown): Promise<{
+    success: boolean
+    error?: string
+  }> => {
+    try {
+      const email = validateEmail(rawEmail)
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: 'tusk://auth/callback',
+        },
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      return { success: true }
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        return { success: false, error: err.message }
+      }
+      return { success: false, error: 'Failed to send magic link' }
+    }
+  })
+}
+
+// Handle deep link callback from magic link
+export async function handleAuthDeepLink(url: string): Promise<void> {
+  try {
+    // Parse the URL - magic links come as tusk://auth/callback#access_token=...&refresh_token=...
+    const urlObj = new URL(url)
+
+    // Supabase puts tokens in the hash fragment
+    const hashParams = new URLSearchParams(urlObj.hash.substring(1))
+    const accessToken = hashParams.get('access_token')
+    const refreshToken = hashParams.get('refresh_token')
+
+    if (!accessToken || !refreshToken) {
+      console.error('Missing tokens in auth callback URL')
+      return
+    }
+
+    // Set the session in Supabase
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    })
+
+    if (error || !data.session || !data.user) {
+      console.error('Failed to set session from magic link:', error)
+      return
+    }
+
+    // Store session securely
+    const user = toUser(data.user)
+    const session: AuthSession = {
+      user,
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+      expiresAt: data.session.expires_at || 0,
+    }
+
+    storeSession(session)
+    emitAuthStateChange(user)
+
+    // Focus the main window
+    if (getMainWindowFn) {
+      const mainWindow = getMainWindowFn()
+      if (mainWindow) {
+        if (mainWindow.isMinimized()) mainWindow.restore()
+        mainWindow.focus()
+      }
+    }
+  } catch (err) {
+    console.error('Error handling auth deep link:', err)
+  }
 }

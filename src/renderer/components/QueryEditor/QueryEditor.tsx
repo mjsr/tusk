@@ -2,6 +2,8 @@ import { useRef, useCallback, useEffect } from 'react'
 import Editor, { OnMount, loader } from '@monaco-editor/react'
 import * as monaco from 'monaco-editor'
 import { useTheme } from '../../contexts/ThemeContext'
+import { useSchema } from '../../contexts/SchemaContext'
+import { registerSqlCompletionProvider } from '../../utils/sqlCompletionProvider'
 
 // Configure Monaco to use local files instead of CDN
 loader.config({ monaco })
@@ -19,6 +21,13 @@ export default function QueryEditor({ value, onChange, onExecute, isExecuting, o
   const monacoRef = useRef<typeof monaco | null>(null)
   const onExecuteRef = useRef(onExecute)
   const { theme } = useTheme()
+  const { metadata } = useSchema()
+  const metadataRef = useRef(metadata)
+
+  // Keep metadata ref updated
+  useEffect(() => {
+    metadataRef.current = metadata
+  }, [metadata])
 
   // Keep the ref updated with the latest onExecute function
   useEffect(() => {
@@ -67,6 +76,9 @@ export default function QueryEditor({ value, onChange, onExecute, isExecuting, o
   const handleMount: OnMount = useCallback((editor, monacoInstance) => {
     editorRef.current = editor
     monacoRef.current = monacoInstance
+
+    // Register SQL completion provider with schema awareness
+    registerSqlCompletionProvider(monacoInstance, () => metadataRef.current)
 
     // Add Cmd/Ctrl+Enter to execute query
     // Use ref to always get the latest onExecute function

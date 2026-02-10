@@ -3,6 +3,7 @@ import type { ConnectionConfig, SavedConnection } from '../../../shared/types'
 import ConnectionForm from './ConnectionForm'
 import ConnectionList from './ConnectionList'
 import ThemeToggle from '../ThemeToggle'
+import { UserMenu } from '../UserMenu'
 
 interface Props {
   onConnect: (name: string) => void
@@ -86,9 +87,11 @@ export default function ConnectionManager({ onConnect }: Props) {
     <div className="h-screen flex flex-col bg-db-bg">
       {/* Title bar drag region (pl-20 leaves room for macOS traffic lights) */}
       <div className="h-10 drag-region flex items-center justify-between pr-4 pl-20 bg-db-surface border-b border-db-border">
-        <span className="text-sm text-db-text-muted">db-gui</span>
-        <div className="no-drag">
+        <span className="text-sm text-db-text-muted">Tusk</span>
+        <div className="no-drag flex items-center gap-3">
           <ThemeToggle />
+          <div className="w-px h-4 bg-db-border" />
+          <UserMenu />
         </div>
       </div>
 

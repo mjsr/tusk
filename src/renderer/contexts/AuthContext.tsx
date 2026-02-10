@@ -13,6 +13,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName?: string) => Promise<{ success: boolean; error?: string }>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>
+  sendMagicLink: (email: string) => Promise<{ success: boolean; error?: string }>
   skipAuth: () => Promise<void>
   clearError: () => void
 }
@@ -129,6 +130,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const sendMagicLink = useCallback(async (email: string) => {
+    setError(null)
+    try {
+      const result = await window.api.authSendMagicLink(email)
+      if (result.success) {
+        return { success: true }
+      }
+      const errorMsg = result.error || 'Failed to send magic link'
+      setError(errorMsg)
+      return { success: false, error: errorMsg }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to send magic link'
+      setError(message)
+      return { success: false, error: message }
+    }
+  }, [])
+
   const skipAuth = useCallback(async () => {
     try {
       await window.api.authSkip()
@@ -158,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signOut,
         resetPassword,
+        sendMagicLink,
         skipAuth,
         clearError,
       }}

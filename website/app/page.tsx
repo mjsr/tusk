@@ -1,3 +1,4 @@
+import Image from "next/image";
 import {
   Zap,
   Sparkles,
@@ -20,7 +21,7 @@ function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
         <a href="#" className="flex items-center gap-2 text-xl font-bold">
-          <Database className="w-6 h-6 text-accent" />
+          <Image src="/icon.png" alt="Tusk" width={28} height={28} className="rounded" />
           Tusk
         </a>
         <div className="flex items-center gap-6">
@@ -360,7 +361,7 @@ function Pricing() {
 
 // GitHub release URLs
 const GITHUB_REPO = "mjsr/tusk";
-const LATEST_VERSION = "1.0.0";
+const LATEST_VERSION = "1.0.1";
 const DOWNLOAD_URLS = {
   macOS: `https://github.com/${GITHUB_REPO}/releases/download/v${LATEST_VERSION}/Tusk-${LATEST_VERSION}-arm64.dmg`,
   windows: `https://github.com/${GITHUB_REPO}/releases/latest`, // Coming soon - links to releases page
@@ -416,7 +417,7 @@ function Footer() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 text-lg font-bold">
-            <Database className="w-5 h-5 text-accent" />
+            <Image src="/icon.png" alt="Tusk" width={24} height={24} className="rounded" />
             Tusk
           </div>
           <div className="flex items-center gap-6 text-muted">

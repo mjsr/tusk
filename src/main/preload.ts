@@ -150,6 +150,9 @@ const api = {
   authSkip: (): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('auth:skip'),
 
+  authSendMagicLink: (email: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('auth:send-magic-link', email),
+
   onAuthStateChange: (callback: (event: { user: User | null }) => void) => {
     const listener = (_: unknown, data: { user: User | null }) => callback(data)
     ipcRenderer.on('auth:state-change', listener)
